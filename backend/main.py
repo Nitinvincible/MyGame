@@ -26,7 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(router, prefix="/api")
 
 # Serve React static build in production
 static_dir = Path(__file__).parent / "static"

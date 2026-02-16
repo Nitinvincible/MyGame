@@ -4,10 +4,6 @@ const THEMES = {
     space: {
         bg: '#05050a',
         grid: 'rgba(0, 240, 255, 0.04)',
-        snake: {
-            start: [0, 255], // R, B
-            end: [240, 60]   // G, A? No, custom logic
-        },
         glow: '#00f0ff',
         food: '#39ff14',
         obstacle: '#ff2244',
@@ -16,25 +12,17 @@ const THEMES = {
     sea: {
         bg: '#001e30',
         grid: 'rgba(0, 100, 255, 0.05)',
-        snake: {
-            start: [0, 255],
-            end: [200, 255]
-        },
         glow: '#0088ff',
-        food: '#ffaa00', // orange
+        food: '#ffaa00',
         obstacle: '#ff4444',
         border: 'rgba(0, 100, 255, 0.5)'
     },
     land: {
         bg: '#1a1614',
         grid: 'rgba(100, 255, 50, 0.05)',
-        snake: {
-            start: [50, 50],
-            end: [200, 0]
-        },
         glow: '#55ff00',
         food: '#ffff00',
-        obstacle: '#888888', // rocks
+        obstacle: '#888888',
         border: 'rgba(100, 255, 50, 0.5)'
     }
 };
@@ -47,7 +35,31 @@ export class Renderer {
         this.offsetX = 0;
         this.offsetY = 0;
         this.time = 0;
-        this.trailHistory = [];
+        this.stars = [];
+        this.bubbles = [];
+        this.rocks = [];
+        this.initEffects();
+    }
+
+    initEffects() {
+        // Space Stars
+        for (let i = 0; i < 100; i++) {
+            this.stars.push({
+                x: Math.random(),
+                y: Math.random(),
+                size: Math.random() * 2,
+                blinkOffset: Math.random() * 10
+            });
+        }
+        // Sea Bubbles
+        for (let i = 0; i < 20; i++) {
+            this.bubbles.push({
+                x: Math.random(),
+                y: Math.random(),
+                size: Math.random() * 5 + 2,
+                speed: Math.random() * 0.5 + 0.2
+            });
+        }
     }
 
     resize(cols, rows) {
@@ -86,11 +98,14 @@ export class Renderer {
         ctx.fillStyle = theme.bg;
         ctx.fillRect(0, 0, this.width, this.height);
 
+        // Theme Background Effects
+        this.drawBackgroundEffects(ctx, themeName);
+
         // Grid
-        this.drawGrid(ctx, g, theme.grid);
+        this.drawGrid(ctx, g, theme.grid, themeName);
 
         // Obstacles
-        engine.obstacles.forEach((o) => this.drawObstacle(ctx, o, g, theme.obstacle));
+        engine.obstacles.forEach((o) => this.drawObstacle(ctx, o, g, theme.obstacle, themeName));
 
         // Food
         if (engine.food) this.drawFood(ctx, engine.food, g, theme.food);
@@ -110,6 +125,58 @@ export class Renderer {
         ctx.restore();
     }
 
+    drawBackgroundEffects(ctx, themeName) {
+        if (themeName === 'space') {
+            // Planet
+            const planetX = this.width * 0.8;
+            const planetY = this.height * 0.2;
+            const radius = Math.min(this.width, this.height) * 0.15;
+
+            const grad = ctx.createRadialGradient(planetX - radius * 0.3, planetY - radius * 0.3, radius * 0.1, planetX, planetY, radius);
+            grad.addColorStop(0, '#4facfe');
+            grad.addColorStop(1, '#00f2fe');
+            ctx.fillStyle = grad;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(planetX, planetY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            // Stars
+            ctx.fillStyle = '#ffffff';
+            this.stars.forEach(s => {
+                const alpha = Math.abs(Math.sin(this.time + s.blinkOffset));
+                ctx.globalAlpha = alpha * 0.8;
+                ctx.beginPath();
+                ctx.arc(s.x * this.width, s.y * this.height, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+        else if (themeName === 'sea') {
+            // Bubbles
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
+            this.bubbles.forEach(b => {
+                b.y -= b.speed * 0.5;
+                if (b.y < -0.1) b.y = 1.1; // reset
+                const x = b.x * this.width + Math.sin(this.time + b.x * 10) * 20;
+                const y = b.y * this.height;
+                ctx.beginPath();
+                ctx.arc(x, y, b.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        else if (themeName === 'land') {
+            // Texture (simple noise/dots)
+            ctx.fillStyle = 'rgba(100, 80, 50, 0.1)';
+            for (let i = 0; i < this.width; i += 40) {
+                for (let j = 0; j < this.height; j += 40) {
+                    if ((i + j) % 3 === 0) ctx.fillRect(i, j, 4, 4);
+                }
+            }
+        }
+    }
+
     toScreen(gx, gy) {
         return {
             x: this.offsetX + gx * this.gridSize,
@@ -117,22 +184,46 @@ export class Renderer {
         };
     }
 
-    drawGrid(ctx, g, color) {
+    drawGrid(ctx, g, color, themeName) {
         ctx.strokeStyle = color;
         ctx.lineWidth = 0.5;
-        for (let x = 0; x <= this.cols; x++) {
-            const sx = this.offsetX + x * g;
+
+        if (themeName === 'sea') {
             ctx.beginPath();
-            ctx.moveTo(sx, this.offsetY);
-            ctx.lineTo(sx, this.offsetY + this.rows * g);
+            for (let x = 0; x <= this.cols; x++) {
+                const sx = this.offsetX + x * g;
+                // Wavy vertical lines
+                for (let y = 0; y <= this.height; y += 10) {
+                    const wave = Math.sin(y * 0.05 + this.time) * 2;
+                    if (y === 0) ctx.moveTo(sx + wave, y);
+                    else ctx.lineTo(sx + wave, y);
+                }
+            }
             ctx.stroke();
-        }
-        for (let y = 0; y <= this.rows; y++) {
-            const sy = this.offsetY + y * g;
+            // Horizontal lines
             ctx.beginPath();
-            ctx.moveTo(this.offsetX, sy);
-            ctx.lineTo(this.offsetX + this.cols * g, sy);
+            for (let y = 0; y <= this.rows; y++) {
+                const sy = this.offsetY + y * g;
+                ctx.moveTo(this.offsetX, sy);
+                ctx.lineTo(this.offsetX + this.cols * g, sy);
+            }
             ctx.stroke();
+        } else {
+            // Normal grid
+            for (let x = 0; x <= this.cols; x++) {
+                const sx = this.offsetX + x * g;
+                ctx.beginPath();
+                ctx.moveTo(sx, this.offsetY);
+                ctx.lineTo(sx, this.offsetY + this.rows * g);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= this.rows; y++) {
+                const sy = this.offsetY + y * g;
+                ctx.beginPath();
+                ctx.moveTo(this.offsetX, sy);
+                ctx.lineTo(this.offsetX + this.cols * g, sy);
+                ctx.stroke();
+            }
         }
     }
 
@@ -244,7 +335,7 @@ export class Renderer {
         ctx.globalAlpha = 1;
     }
 
-    drawObstacle(ctx, obs, g, color) {
+    drawObstacle(ctx, obs, g, color, themeName) {
         const { x, y } = this.toScreen(obs.x, obs.y);
         const pulse = Math.sin(this.time * 2 + obs.x * 0.5) * 0.1 + 0.9;
 
@@ -252,20 +343,31 @@ export class Renderer {
         ctx.shadowBlur = 8;
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.7 * pulse;
-        this.roundRect(ctx, x + 2, y + 2, g - 4, g - 4, 3);
-        ctx.fill();
+
+        if (themeName === 'land') {
+            // Rock shape
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y + g - 2);
+            ctx.lineTo(x + g / 2, y + 2);
+            ctx.lineTo(x + g - 2, y + g - 2);
+            ctx.fill();
+        } else {
+            this.roundRect(ctx, x + 2, y + 2, g - 4, g - 4, 3);
+            ctx.fill();
+
+            // X pattern
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y + 5);
+            ctx.lineTo(x + g - 5, y + g - 5);
+            ctx.moveTo(x + g - 5, y + 5);
+            ctx.lineTo(x + 5, y + g - 5);
+            ctx.stroke();
+        }
+
         ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
-
-        // X pattern
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x + 5, y + 5);
-        ctx.lineTo(x + g - 5, y + g - 5);
-        ctx.moveTo(x + g - 5, y + 5);
-        ctx.lineTo(x + 5, y + g - 5);
-        ctx.stroke();
     }
 
     drawPowerup(ctx, powerup, g) {

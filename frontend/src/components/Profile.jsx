@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
+import { updateProfile } from '../services/api';
 import './Profile.css';
 
 export default function Profile({ onClose }) {
@@ -34,16 +35,8 @@ export default function Profile({ onClose }) {
         }
 
         try {
-            const res = await fetch('http://localhost:8000/api/profile/update', {
-                method: 'POST',
-                body: formData
-            });
-            if (!res.ok) throw new Error('Update failed');
-            const updatedUser = await res.json();
-            // We should update context user here manually or re-fetch
-            // For simplicity, just alert success
+            const updatedUser = await updateProfile(formData);
             setStatus('Saved!');
-            // Ideally call a refreshUser() in context
         } catch (err) {
             setStatus('Error saving profile');
             console.error(err);

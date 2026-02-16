@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { googleLogout } from '@react-oauth/google';
-
+import { googleAuth, manualLogin, manualSignup } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -21,26 +21,40 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentialResponse) => {
         try {
             const idToken = credentialResponse.credential;
-
-            // Backend verification
-            const response = await fetch('http://localhost:8000/api/auth/google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: idToken })
-            });
-
-            if (!response.ok) throw new Error('Login failed');
-
-            const userData = await response.json();
+            const userData = await googleAuth(idToken);
 
             setUser(userData);
             setToken(idToken);
             localStorage.setItem('serpent_user', JSON.stringify(userData));
             localStorage.setItem('serpent_token', idToken);
-
             return userData;
         } catch (error) {
-            console.error('Login error:', error);
+            console.error("Login failed:", error);
+            logout();
+            throw error;
+        }
+    };
+
+    const manualLoginUser = async (username, password) => {
+        try {
+            const userData = await manualLogin(username, password);
+            setUser(userData);
+            localStorage.setItem('serpent_user', JSON.stringify(userData));
+            return userData;
+        } catch (error) {
+            console.error("Manual login failed:", error);
+            throw error;
+        }
+    };
+
+    const signupUser = async (username, password, name, country) => {
+        try {
+            const userData = await manualSignup(username, password, name, country);
+            setUser(userData);
+            localStorage.setItem('serpent_user', JSON.stringify(userData));
+            return userData;
+        } catch (error) {
+            console.error("Signup failed:", error);
             throw error;
         }
     };
@@ -54,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, token, login, logout, manualLoginUser, signupUser }}>
             {children}
         </AuthContext.Provider>
     );

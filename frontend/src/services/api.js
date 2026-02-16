@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const checkHealth = async () => {
     try {
@@ -48,15 +48,34 @@ export const fetchDifficulty = async (stats) => {
         return null;
     }
 };
-
+// Auth
 export const googleAuth = async (token) => {
     const res = await fetch(`${API_URL}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token })
     });
-    if (!res.ok) throw new Error('Auth failed');
-    return await res.json();
+    return res.json();
+};
+
+export const manualSignup = async (username, password, name, country) => {
+    const res = await fetch(`${API_URL}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, name, country })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+};
+
+export const manualLogin = async (username, password) => {
+    const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
 };
 
 export const updateProfile = async (formData) => {

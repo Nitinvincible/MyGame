@@ -25,3 +25,9 @@ Thumbs.db
 
 # Docker
 *.log
+
+# Secrets
+client_secret_*.json
+
+# Database
+*.db

@@ -31,6 +31,19 @@ def init_db():
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
     
+    # Users table update for manual auth
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
+        c.execute("ALTER TABLE users ADD COLUMN username TEXT")
+    except sqlite3.OperationalError:
+        pass # Columns might already exist
+
+    # Ensure username is unique index
+    try:
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_username ON users(username)")
+    except:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -43,6 +56,15 @@ def get_user_by_google_id(google_id):
     conn.close()
     return dict(user) if user else None
 
+def get_user_by_username(username):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = c.fetchone()
+    conn.close()
+    return dict(user) if user else None
+
 def get_user(user_id):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -51,6 +73,24 @@ def get_user(user_id):
     user = c.fetchone()
     conn.close()
     return dict(user) if user else None
+
+def create_manual_user(username, password_hash, name, country):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    # Check if username exists
+    c.execute("SELECT id FROM users WHERE username = ?", (username,))
+    if c.fetchone():
+        conn.close()
+        raise ValueError("Username already exists")
+
+    user_id = str(uuid.uuid4())
+    c.execute("INSERT INTO users (id, username, password_hash, name, country, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+              (user_id, username, password_hash, name, country, datetime.now()))
+    
+    conn.commit()
+    conn.close()
+    return get_user(user_id)
 
 def create_or_update_user(google_id, name, email, avatar_url=None):
     conn = sqlite3.connect(DB_PATH)

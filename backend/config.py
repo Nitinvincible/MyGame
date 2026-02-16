@@ -22,6 +22,10 @@ if CLIENT_SECRET_FILE:
     except Exception as e:
         print(f"Error loading client secret: {e}")
 
+# Fallback to env var (for Cloud Run where file is gitignored)
+if not GOOGLE_CLIENT_ID:
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
 # CORS
 CORS_ORIGINS = [
     "http://localhost:5173",

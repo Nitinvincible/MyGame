@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { fetchLeaderboard } from '../services/api';
 import './Leaderboard.css';
 
 export default function Leaderboard({ onClose, userCountry }) {
@@ -11,8 +12,7 @@ export default function Leaderboard({ onClose, userCountry }) {
             setLoading(true);
             try {
                 const countryParam = tab === 'COUNTRY' ? (userCountry || 'GLOBAL') : 'GLOBAL';
-                const res = await fetch(`http://localhost:8000/api/leaderboard?country=${countryParam}`);
-                const data = await res.json();
+                const data = await fetchLeaderboard(countryParam);
                 setScores(data);
             } catch (err) {
                 console.error(err);

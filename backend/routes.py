@@ -1,14 +1,19 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Body
 from pydantic import BaseModel
 from typing import Optional, List
-import ai_service
-import database
-import config
-from google.oauth2 import id_token
+import google.oauth2.id_token
 from google.auth.transport import requests
+from config import GEMINI_API_KEY, GOOGLE_CLIENT_ID
+from ai_service import client, narrate, chat, adjust_difficulty
+import database
+import shutil
+import os
+import uuid
+from passlib.context import CryptContext
 import base64
 
-router = APIRouter(prefix="/api")
+router = APIRouter()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Models
 
@@ -52,11 +57,21 @@ class DifficultyResponse(BaseModel):
 class GoogleAuthRequest(BaseModel):
     token: str
 
+class ManualAuthRequest(BaseModel):
+    username: str
+    password: str
+    name: Optional[str] = "Pilot"
+    country: Optional[str] = "GLOBAL"
+
+class ManualLoginRequest(BaseModel):
+    username: str
+    password: str
+
 class UserProfile(BaseModel):
     id: str
-    google_id: str
+    google_id: Optional[str] = None
     name: str
-    email: str
+    email: Optional[str] = None
     avatar_url: Optional[str] = None
     country: Optional[str] = "GLOBAL"
 
@@ -70,34 +85,33 @@ class ScoreRequest(BaseModel):
 
 @router.get("/health")
 async def health():
-    return {"status": "alive", "game": "SERPENT", "ai": bool(ai_service.client)}
+    return {"status": "alive", "game": "SERPENT", "ai": bool(client)}
 
 @router.post("/narrate", response_model=NarrationResponse)
-async def narrate(state: GameState):
-    result = await ai_service.narrate(state.model_dump())
+async def narrate_endpoint(state: GameState):
+    result = await narrate(state.model_dump())
     return result
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
-    result = await ai_service.chat(req.message, req.model_dump())
+async def chat_endpoint(req: ChatRequest):
+    result = await chat(req.message, req.model_dump())
     return result
 
 @router.post("/difficulty", response_model=DifficultyResponse)
-async def difficulty(stats: PlayerStats):
-    result = await ai_service.adjust_difficulty(stats.model_dump())
+async def difficulty_endpoint(stats: PlayerStats):
+    result = await adjust_difficulty(stats.model_dump())
     return result
 
 
-# --- Social Endpoints ---
+# --- Auth Endpoints ---
 
 @router.post("/auth/google", response_model=UserProfile)
 async def google_auth(req: GoogleAuthRequest):
     try:
-        # Verify token
-        id_info = id_token.verify_oauth2_token(
+        id_info = google.oauth2.id_token.verify_oauth2_token(
             req.token, 
             requests.Request(), 
-            config.GOOGLE_CLIENT_ID
+            GOOGLE_CLIENT_ID
         )
         
         google_id = id_info['sub']
@@ -105,7 +119,6 @@ async def google_auth(req: GoogleAuthRequest):
         name = id_info.get('name')
         picture = id_info.get('picture')
         
-        # Create or update user
         user = database.create_or_update_user(google_id, name, email, picture)
         return user
         
@@ -114,6 +127,32 @@ async def google_auth(req: GoogleAuthRequest):
     except Exception as e:
         print(f"Auth Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/auth/signup", response_model=UserProfile)
+async def manual_signup(req: ManualAuthRequest):
+    try:
+        password_hash = pwd_context.hash(req.password)
+        user = database.create_manual_user(req.username, password_hash, req.name, req.country)
+        return user
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Signup Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/auth/login", response_model=UserProfile)
+async def manual_login(req: ManualLoginRequest):
+    user = database.get_user_by_username(req.username)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    if not pwd_context.verify(req.password, user.get("password_hash", "")):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    return user
+
+
+# --- Social Endpoints ---
 
 @router.get("/profile/{user_id}", response_model=UserProfile)
 async def get_profile(user_id: str):
@@ -131,12 +170,10 @@ async def update_profile(
 ):
     avatar_url = None
     if avatar:
-        # Check size (1MB limit)
         content = await avatar.read()
         if len(content) > 1024 * 1024:
             raise HTTPException(status_code=400, detail="Avatar file too large (>1MB)")
         
-        # Convert to base64 data URI
         encoded = base64.b64encode(content).decode('utf-8')
         mime_type = avatar.content_type
         avatar_url = f"data:{mime_type};base64,{encoded}"

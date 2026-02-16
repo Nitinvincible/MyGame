@@ -5,3 +5,5 @@ python-dotenv
 pydantic
 google-auth
 requests
+python-multipart
+passlib[bcrypt]
