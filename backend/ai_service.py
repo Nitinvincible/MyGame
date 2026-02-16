@@ -1,5 +1,6 @@
 import json
 from google import genai
+import traceback
 from config import GEMINI_API_KEY, GEMINI_MODEL
 
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
@@ -12,14 +13,14 @@ Keep responses SHORT — max 2 sentences for narration, max 3 for chat."""
 
 NARRATION_PROMPT = """Based on this game state, provide dramatic narration and optionally 
 generate a game event. Respond in JSON format ONLY:
-{
+{{
   "narration": "Short dramatic commentary about what's happening (max 2 sentences)",
-  "event": null or {
+  "event": null or {{
     "type": "spawn_obstacle" | "spawn_powerup" | "speed_change" | "none",
     "subtype": "wall" | "mine" | "speed_boost" | "shield" | "shrink" | "multiplier" | "slow" | "fast",
     "message": "Short dramatic announcement of the event"
-  }
-}
+  }}
+}}
 
 Game state:
 - Score: {score}
@@ -76,13 +77,17 @@ async def narrate(game_state: dict) -> dict:
         }
     
     try:
+        # Check for specific flags in game_state
+        is_game_over = game_state.get("game_over", False)
+        ate_food = game_state.get("ate_food", False)
+
         prompt = NARRATION_PROMPT.format(
             score=game_state.get("score", 0),
             length=game_state.get("length", 3),
             level=game_state.get("level", 1),
             deaths=game_state.get("deaths", 0),
             powerups=game_state.get("active_powerups", []),
-            events=game_state.get("recent_events", []),
+            events=game_state.get("recent_events", []) + (["GAME OVER"] if is_game_over else []) + (["ATE FOOD"] if ate_food else []),
             time_alive=game_state.get("time_alive", 0),
         )
         
@@ -92,10 +97,13 @@ async def narrate(game_state: dict) -> dict:
             config={"response_mime_type": "application/json"}
         )
         
+        print(f"DEBUG: Response Text: {response.text}")
         result = json.loads(response.text)
         return result
     except Exception as e:
+        print(f"Narration error type: {type(e)}")
         print(f"Narration error: {e}")
+        traceback.print_exc()
         return {
             "narration": "Static crackles across the grid... the Serpent endures.",
             "event": None
@@ -123,6 +131,7 @@ async def chat(message: str, game_context: dict) -> dict:
         return {"reply": response.text}
     except Exception as e:
         print(f"Chat error: {e}")
+        traceback.print_exc()
         return {"reply": "Signal disrupted... try again, Runner."}
 
 
@@ -154,6 +163,7 @@ async def adjust_difficulty(player_stats: dict) -> dict:
         return result
     except Exception as e:
         print(f"Difficulty error: {e}")
+        traceback.print_exc()
         return {
             "speed": 7,
             "obstacle_density": 0.3,

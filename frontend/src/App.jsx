@@ -23,6 +23,7 @@ function App() {
   const engineRef = useRef(null);
   const audioRef = useRef(new Audio());
   const narrationTimerRef = useRef(null);
+  const lastEatCommentaryTimeRef = useRef(0);
 
   // Check backend health on mount
   useEffect(() => {
@@ -92,6 +93,18 @@ function App() {
     if (labels[evt]) {
       setEventLog((prev) => [...prev.slice(-20), labels[evt]]);
     }
+
+    // Trigger immediate commentary on eating (throttled)
+    if (evt === 'ate_food') {
+      const now = Date.now();
+      if (now - lastEatCommentaryTimeRef.current > 8000 && engineRef.current) {
+        lastEatCommentaryTimeRef.current = now;
+        const state = engineRef.current.getState();
+        fetchNarration({ ...state, ate_food: true }).then((result) => {
+          if (result?.narration) setNarration(result.narration);
+        });
+      }
+    }
   }, []);
 
   const goToMenu = useCallback(() => {
@@ -104,6 +117,8 @@ function App() {
   // Global key handlers
   useEffect(() => {
     const handleKey = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
       if (e.key === 't' || e.key === 'T') {
         if (screen === 'playing') {
           e.preventDefault();

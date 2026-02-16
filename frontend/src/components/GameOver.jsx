@@ -14,6 +14,7 @@ export default function GameOver({ score, gameState, onRestart, onMenu }) {
             const result = await fetchNarration({
                 ...gameState,
                 recent_events: ['final_death', 'game_over'],
+                game_over: true,
             });
             if (result?.narration) {
                 setCommentary(result.narration);

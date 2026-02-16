@@ -39,6 +39,8 @@ export default function GameCanvas({ onGameOver, onEvent, engineRef, audioRef })
         window.addEventListener('resize', handleResize);
 
         const handleKey = (e) => {
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
             const engine = engineRef.current;
             if (!engine) return;
 
