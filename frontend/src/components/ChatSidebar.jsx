@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendChat } from '../services/api';
+import { fetchChat } from '../services/api';
 import './ChatSidebar.css';
 
 export default function ChatSidebar({ isOpen, onClose, engineRef }) {
@@ -32,7 +32,7 @@ export default function ChatSidebar({ isOpen, onClose, engineRef }) {
         setLoading(true);
 
         const state = engineRef?.current?.getState() || {};
-        const result = await sendChat(userMsg, state);
+        const result = await fetchChat(userMsg, state);
 
         setMessages((prev) => [
             ...prev,

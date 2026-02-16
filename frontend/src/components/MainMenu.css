@@ -46,10 +46,28 @@
 }
 
 @keyframes glitchFlicker {
-  0%, 94%, 100% { opacity: 1; transform: none; }
-  95% { opacity: 0.8; transform: translate(-2px, 1px); }
-  96% { opacity: 1; transform: translate(1px, -1px); }
-  97% { opacity: 0.9; transform: none; }
+
+  0%,
+  94%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+
+  95% {
+    opacity: 0.8;
+    transform: translate(-2px, 1px);
+  }
+
+  96% {
+    opacity: 1;
+    transform: translate(1px, -1px);
+  }
+
+  97% {
+    opacity: 0.9;
+    transform: none;
+  }
 }
 
 .menu-subtitle {
@@ -59,26 +77,7 @@
   letter-spacing: 0.4em;
   margin-top: 0.5rem;
   text-transform: uppercase;
-}
-
-.menu-tagline {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  opacity: 0.7;
-}
-
-.tagline-line {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 0.9rem;
-  color: #aab;
-}
-
-.tagline-line em {
-  color: #00f0ff;
-  font-style: normal;
-  font-weight: 600;
+  text-align: center;
 }
 
 .menu-actions {
@@ -103,6 +102,7 @@
   border-radius: 8px;
   transition: all 0.3s ease;
   overflow: hidden;
+  text-align: center;
 }
 
 .btn-primary:hover {
@@ -128,80 +128,110 @@
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) rotate(45deg); }
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
 }
 
-.btn-secondary {
-  padding: 0.6rem 1.5rem;
-  border: 1px solid rgba(255, 0, 170, 0.4);
-  background: transparent;
-  color: #ff00aa;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-}
+/* New Styles */
 
-.btn-secondary:hover {
-  background: rgba(255, 0, 170, 0.15);
-  border-color: #ff00aa;
-}
-
-.controls-panel {
+.secondary-actions {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 240, 255, 0.1);
-  border-radius: 8px;
+  gap: 1rem;
   width: 100%;
-  animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.control-row {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 0.9rem;
-  color: #8899aa;
-}
-
-.control-row kbd {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  background: rgba(0, 240, 255, 0.1);
+.menu-btn {
+  flex: 1;
+  padding: 0.8rem;
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(0, 240, 255, 0.3);
-  border-radius: 4px;
   color: #00f0ff;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.7rem;
-  min-width: 70px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
   text-align: center;
 }
 
-.menu-footer {
+.menu-btn:hover {
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.theme-selector {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.theme-selector span {
+  color: #aaa;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+}
+
+.theme-options {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem;
+  border-radius: 4px;
+}
+
+.theme-options button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: #666;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.theme-options button:hover {
+  color: #fff;
+}
+
+.theme-options button.active {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+}
+
+/* Refined Flow Styles */
+
+.btn-primary.highlight {
+  border-color: #ffd700;
+  /* Gold for Login */
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.btn-primary.highlight:hover {
+  background: rgba(255, 215, 0, 0.25);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4), inset 0 0 30px rgba(255, 215, 0, 0.1);
+}
+
+.btn-primary.highlight::before {
+  background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+}
+
+.welcome-msg {
+  color: #fff;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 0.75rem;
-  color: rgba(0, 240, 255, 0.4);
-  letter-spacing: 0.3em;
-}
-
-.blink {
-  animation: blink 1s steps(1) infinite;
-}
-
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
 }

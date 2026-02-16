@@ -1,5 +1,44 @@
 import { POWERUP_TYPES } from './Engine.js';
 
+const THEMES = {
+    space: {
+        bg: '#05050a',
+        grid: 'rgba(0, 240, 255, 0.04)',
+        snake: {
+            start: [0, 255], // R, B
+            end: [240, 60]   // G, A? No, custom logic
+        },
+        glow: '#00f0ff',
+        food: '#39ff14',
+        obstacle: '#ff2244',
+        border: 'rgba(0, 240, 255, 0.5)'
+    },
+    sea: {
+        bg: '#001e30',
+        grid: 'rgba(0, 100, 255, 0.05)',
+        snake: {
+            start: [0, 255],
+            end: [200, 255]
+        },
+        glow: '#0088ff',
+        food: '#ffaa00', // orange
+        obstacle: '#ff4444',
+        border: 'rgba(0, 100, 255, 0.5)'
+    },
+    land: {
+        bg: '#1a1614',
+        grid: 'rgba(100, 255, 50, 0.05)',
+        snake: {
+            start: [50, 50],
+            end: [200, 0]
+        },
+        glow: '#55ff00',
+        food: '#ffff00',
+        obstacle: '#888888', // rocks
+        border: 'rgba(100, 255, 50, 0.5)'
+    }
+};
+
 export class Renderer {
     constructor(canvas) {
         this.canvas = canvas;
@@ -29,10 +68,11 @@ export class Renderer {
         this.rows = rows;
     }
 
-    draw(engine, deltaTime) {
+    draw(engine, deltaTime, themeName = 'space') {
         this.time += deltaTime;
         const ctx = this.ctx;
         const g = this.gridSize;
+        const theme = THEMES[themeName] || THEMES.space;
 
         // Apply screen shake
         ctx.save();
@@ -43,29 +83,29 @@ export class Renderer {
         }
 
         // Background
-        ctx.fillStyle = '#05050a';
+        ctx.fillStyle = theme.bg;
         ctx.fillRect(0, 0, this.width, this.height);
 
         // Grid
-        this.drawGrid(ctx, g);
+        this.drawGrid(ctx, g, theme.grid);
 
         // Obstacles
-        engine.obstacles.forEach((o) => this.drawObstacle(ctx, o, g));
+        engine.obstacles.forEach((o) => this.drawObstacle(ctx, o, g, theme.obstacle));
 
         // Food
-        if (engine.food) this.drawFood(ctx, engine.food, g);
+        if (engine.food) this.drawFood(ctx, engine.food, g, theme.food);
 
         // Powerups
         engine.powerups.forEach((p) => this.drawPowerup(ctx, p, g));
 
         // Snake
-        this.drawSnake(ctx, engine.snake, engine.activePowerups, g);
+        this.drawSnake(ctx, engine.snake, engine.activePowerups, g, themeName, theme);
 
         // Particles
         engine.particles.forEach((p) => this.drawParticle(ctx, p, g));
 
         // Border glow
-        this.drawBorder(ctx);
+        this.drawBorder(ctx, theme.border);
 
         ctx.restore();
     }
@@ -77,8 +117,8 @@ export class Renderer {
         };
     }
 
-    drawGrid(ctx, g) {
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+    drawGrid(ctx, g, color) {
+        ctx.strokeStyle = color;
         ctx.lineWidth = 0.5;
         for (let x = 0; x <= this.cols; x++) {
             const sx = this.offsetX + x * g;
@@ -96,7 +136,7 @@ export class Renderer {
         }
     }
 
-    drawSnake(ctx, snake, activePowerups, g) {
+    drawSnake(ctx, snake, activePowerups, g, themeName, theme) {
         const hasShield = 'shield' in activePowerups;
         const hasPhase = 'phase' in activePowerups;
 
@@ -107,15 +147,26 @@ export class Renderer {
 
             // Glow
             if (i === 0) {
-                ctx.shadowColor = '#00f0ff';
+                ctx.shadowColor = theme.glow;
                 ctx.shadowBlur = 15;
             }
 
-            // Body gradient from cyan to magenta
-            const r = Math.floor(0 + t * 255);
-            const gb = Math.floor(240 - t * 200);
-            const b = Math.floor(255 - t * 60);
-            ctx.fillStyle = `rgba(${r}, ${gb}, ${b}, ${hasPhase ? 0.5 : 0.9})`;
+            // Body color Logic
+            if (themeName === 'sea') {
+                const b = Math.floor(255 - t * 100);
+                const gVal = Math.floor(100 + t * 155);
+                ctx.fillStyle = `rgba(0, ${gVal}, ${b}, ${hasPhase ? 0.5 : 0.9})`;
+            } else if (themeName === 'land') {
+                const r = Math.floor(100 + t * 155); // brown/orange
+                const gVal = Math.floor(155 - t * 100);
+                ctx.fillStyle = `rgba(${r}, ${gVal}, 0, ${hasPhase ? 0.5 : 0.9})`;
+            } else {
+                // Space (Cyan -> Magenta)
+                const r = Math.floor(0 + t * 255);
+                const gVal = Math.floor(240 - t * 200);
+                const b = Math.floor(255 - t * 60);
+                ctx.fillStyle = `rgba(${r}, ${gVal}, ${b}, ${hasPhase ? 0.5 : 0.9})`;
+            }
 
             const radius = Math.max(2, g * 0.15);
             this.roundRect(ctx, x + pad, y + pad, g - pad * 2, g - pad * 2, radius);
@@ -163,47 +214,51 @@ export class Renderer {
         }
     }
 
-    drawFood(ctx, food, g) {
+    drawFood(ctx, food, g, color) {
         const { x, y } = this.toScreen(food.x, food.y);
         const pulse = Math.sin(food.pulse) * 0.15 + 0.85;
         const size = g * 0.35 * pulse;
 
         // Outer glow
-        ctx.shadowColor = '#39ff14';
+        ctx.shadowColor = color;
         ctx.shadowBlur = 20;
-        ctx.fillStyle = '#39ff14';
+        ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(x + g / 2, y + g / 2, size, 0, Math.PI * 2);
         ctx.fill();
 
         // Inner bright
         ctx.shadowBlur = 0;
-        ctx.fillStyle = '#aaffaa';
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(x + g / 2, y + g / 2, size * 0.5, 0, Math.PI * 2);
         ctx.fill();
 
         // Halo ring
-        ctx.strokeStyle = `rgba(57, 255, 20, ${0.2 + Math.sin(food.pulse * 1.5) * 0.15})`;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.2 + Math.sin(food.pulse * 1.5) * 0.15;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(x + g / 2, y + g / 2, size + 4 + Math.sin(food.pulse) * 2, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.globalAlpha = 1;
     }
 
-    drawObstacle(ctx, obs, g) {
+    drawObstacle(ctx, obs, g, color) {
         const { x, y } = this.toScreen(obs.x, obs.y);
         const pulse = Math.sin(this.time * 2 + obs.x * 0.5) * 0.1 + 0.9;
 
-        ctx.shadowColor = '#ff2244';
+        ctx.shadowColor = color;
         ctx.shadowBlur = 8;
-        ctx.fillStyle = `rgba(255, 34, 68, ${0.7 * pulse})`;
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.7 * pulse;
         this.roundRect(ctx, x + 2, y + 2, g - 4, g - 4, 3);
         ctx.fill();
+        ctx.globalAlpha = 1;
         ctx.shadowBlur = 0;
 
         // X pattern
-        ctx.strokeStyle = 'rgba(255, 100, 100, 0.6)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(x + 5, y + 5);
@@ -243,48 +298,21 @@ export class Renderer {
         ctx.globalAlpha = 1;
     }
 
-    drawBorder(ctx) {
+    drawBorder(ctx, color) {
         const x = this.offsetX;
         const y = this.offsetY;
         const w = this.cols * this.gridSize;
         const h = this.rows * this.gridSize;
         const pulse = Math.sin(this.time) * 0.2 + 0.5;
 
-        ctx.strokeStyle = `rgba(0, 240, 255, ${pulse * 0.5})`;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = pulse * 0.5;
         ctx.lineWidth = 2;
-        ctx.shadowColor = '#00f0ff';
+        ctx.shadowColor = color;
         ctx.shadowBlur = 10;
         ctx.strokeRect(x, y, w, h);
         ctx.shadowBlur = 0;
-
-        // Corner accents
-        const corner = 15;
-        ctx.strokeStyle = `rgba(255, 0, 170, ${pulse * 0.8})`;
-        ctx.lineWidth = 3;
-        // Top-left
-        ctx.beginPath();
-        ctx.moveTo(x, y + corner);
-        ctx.lineTo(x, y);
-        ctx.lineTo(x + corner, y);
-        ctx.stroke();
-        // Top-right
-        ctx.beginPath();
-        ctx.moveTo(x + w - corner, y);
-        ctx.lineTo(x + w, y);
-        ctx.lineTo(x + w, y + corner);
-        ctx.stroke();
-        // Bottom-left
-        ctx.beginPath();
-        ctx.moveTo(x, y + h - corner);
-        ctx.lineTo(x, y + h);
-        ctx.lineTo(x + corner, y + h);
-        ctx.stroke();
-        // Bottom-right
-        ctx.beginPath();
-        ctx.moveTo(x + w - corner, y + h);
-        ctx.lineTo(x + w, y + h);
-        ctx.lineTo(x + w, y + h - corner);
-        ctx.stroke();
+        ctx.globalAlpha = 1;
     }
 
     roundRect(ctx, x, y, w, h, r) {

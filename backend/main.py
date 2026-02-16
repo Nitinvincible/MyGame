@@ -7,7 +7,16 @@ from fastapi.responses import FileResponse
 from routes import router
 from config import CORS_ORIGINS
 
-app = FastAPI(title="SERPENT API", version="1.0.0")
+import database
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    database.init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan,
+title="SERPENT API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,

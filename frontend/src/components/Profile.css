@@ -1,0 +1,155 @@
+/* Profile.css */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.profile-modal {
+    width: 90%;
+    max-width: 500px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(10, 10, 15, 0.95);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+    position: relative;
+    border-radius: 4px;
+}
+
+.glass-panel {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #00f0ff;
+}
+
+h2 {
+    color: #00f0ff;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.login-section {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.login-section p {
+    margin-bottom: 1.5rem;
+    color: #aaa;
+}
+
+.avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00f0ff;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: #00f0ff;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.8rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #00f0ff;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+button.save-btn {
+    flex: 1;
+    padding: 1rem;
+    background: #00f0ff;
+    color: #000;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+button.save-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+}
+
+button.logout-btn {
+    padding: 1rem;
+    background: transparent;
+    border: 1px solid #ff2244;
+    color: #ff2244;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+button.logout-btn:hover {
+    background: rgba(255, 34, 68, 0.1);
+}
+
+.status-msg {
+    text-align: center;
+    margin-top: 1rem;
+    color: #00f0ff;
+    font-size: 0.9rem;
+}

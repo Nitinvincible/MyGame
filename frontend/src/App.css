@@ -3,6 +3,7 @@
   height: 100vh;
   overflow: hidden;
   background: #05050a;
+  transition: background 0.5s ease;
 }
 
 .game-canvas {
@@ -62,4 +63,35 @@
 
 .mute-toggle:hover {
   background: rgba(255, 0, 170, 0.15);
+}
+
+/* Themes */
+.app.theme-space {
+  background: #05050a;
+}
+
+.app.theme-sea {
+  background: #001e30;
+}
+
+.app.theme-land {
+  background: #1a1614;
+}
+
+/* Scrollbar styling for leaderboards */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.5);
 }

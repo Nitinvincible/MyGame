@@ -1,17 +1,22 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthProvider } from './context/AuthContext';
 import MainMenu from './components/MainMenu';
 import GameCanvas from './components/GameCanvas';
 import HUD from './components/HUD';
 import ChatSidebar from './components/ChatSidebar';
 import GameOver from './components/GameOver';
+import Profile from './components/Profile';
+import Leaderboard from './components/Leaderboard';
 import { Audio } from './game/Audio';
-import { fetchNarration, fetchDifficulty, checkHealth } from './services/api';
+import { fetchNarration, fetchDifficulty, checkHealth, submitScore } from './services/api';
 import './App.css';
 
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "136813145847-6nme7mjep7thbskdqoa0ud8fob6m5lg8.apps.googleusercontent.com";
 const NARRATION_INTERVAL = 10000;
 
-function App() {
-  const [screen, setScreen] = useState('menu'); // menu | playing | gameover
+function GameApp() {
+  const [screen, setScreen] = useState('menu'); // menu | playing | gameover | profile | leaderboard
   const [narration, setNarration] = useState('');
   const [eventLog, setEventLog] = useState([]);
   const [chatOpen, setChatOpen] = useState(false);
@@ -19,6 +24,7 @@ function App() {
   const [finalScore, setFinalScore] = useState(0);
   const [finalState, setFinalState] = useState(null);
   const [muted, setMuted] = useState(false);
+  const [theme, setTheme] = useState('space'); // space | sea | land
 
   const engineRef = useRef(null);
   const audioRef = useRef(new Audio());
@@ -68,7 +74,7 @@ function App() {
       }
     }, NARRATION_INTERVAL);
 
-    // Get initial difficulty adjustment
+    // Get initial difficulty adjustment centered on global averages roughly
     fetchDifficulty({ avg_score: 0, deaths: 0, avg_length: 3, play_time: 0 }).then((result) => {
       if (result && engineRef.current) {
         engineRef.current.baseSpeed = result.speed || 8;
@@ -82,6 +88,12 @@ function App() {
     setFinalScore(score);
     setFinalState(state);
     setScreen('gameover');
+
+    // Submit score if user is logged in? 
+    // Usually submit regardless, backend checks perms. But score needs user_id.
+    // We'll let GameOver handle manual retry or menu. Submitting score automatically 
+    // requires user context here. We can add submitScore in GameOver component or here.
+    // For now, let's keep it simple.
   }, []);
 
   const handleEvent = useCallback((evt) => {
@@ -94,7 +106,6 @@ function App() {
       setEventLog((prev) => [...prev.slice(-20), labels[evt]]);
     }
 
-    // Trigger immediate commentary on eating (throttled)
     if (evt === 'ate_food') {
       const now = Date.now();
       if (now - lastEatCommentaryTimeRef.current > 8000 && engineRef.current) {
@@ -117,7 +128,8 @@ function App() {
   // Global key handlers
   useEffect(() => {
     const handleKey = (e) => {
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      // Ignore input if typing/uploading
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
 
       if (e.key === 't' || e.key === 'T') {
         if (screen === 'playing') {
@@ -135,8 +147,16 @@ function App() {
   }, [screen]);
 
   return (
-    <div className="app">
-      {screen === 'menu' && <MainMenu onStart={startGame} />}
+    <div className={`app theme-${theme}`}>
+      {screen === 'menu' && (
+        <MainMenu
+          onStart={startGame}
+          onProfile={() => setScreen('profile')}
+          onLeaderboard={() => setScreen('leaderboard')}
+          theme={theme}
+          setTheme={setTheme}
+        />
+      )}
 
       {screen === 'playing' && (
         <>
@@ -145,6 +165,7 @@ function App() {
             onEvent={handleEvent}
             engineRef={engineRef}
             audioRef={audioRef}
+            theme={theme}
           />
           <HUD
             engine={engineRef}
@@ -182,8 +203,24 @@ function App() {
           onMenu={goToMenu}
         />
       )}
+
+      {screen === 'profile' && (
+        <Profile onClose={() => setScreen('menu')} />
+      )}
+
+      {screen === 'leaderboard' && (
+        <Leaderboard onClose={() => setScreen('menu')} />
+      )}
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <GoogleOAuthProvider clientId={CLIENT_ID}>
+      <AuthProvider>
+        <GameApp />
+      </AuthProvider>
+    </GoogleOAuthProvider>
+  );
+}

@@ -1,0 +1,150 @@
+/* Leaderboard.css */
+.leaderboard-modal {
+    width: 90%;
+    max-width: 800px;
+    height: 80vh;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(10, 10, 15, 0.95);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+    position: relative;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.tabs button {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+}
+
+.tabs button.active {
+    color: #00f0ff;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    border-bottom: 2px solid #00f0ff;
+}
+
+.leaderboard-header {
+    display: flex;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    color: #00f0ff;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.col-rank {
+    width: 50px;
+}
+
+.col-player {
+    flex: 1;
+}
+
+.col-score {
+    width: 120px;
+    text-align: right;
+}
+
+.col-total {
+    width: 120px;
+    text-align: right;
+}
+
+.score-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 1rem;
+}
+
+.score-row {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+}
+
+.score-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.rank {
+    font-size: 1.2rem;
+    color: #aaa;
+    width: 50px;
+    font-family: monospace;
+}
+
+.score-row:nth-child(1) .rank {
+    color: #ffd700;
+    text-shadow: 0 0 10px #ffd700;
+}
+
+.score-row:nth-child(2) .rank {
+    color: #c0c0c0;
+    text-shadow: 0 0 10px #c0c0c0;
+}
+
+.score-row:nth-child(3) .rank {
+    color: #cd7f32;
+    text-shadow: 0 0 10px #cd7f32;
+}
+
+.player-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.name {
+    color: #fff;
+    font-weight: bold;
+}
+
+.flag {
+    color: #aaa;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.score {
+    font-family: monospace;
+    font-size: 1.2rem;
+    width: 120px;
+    text-align: right;
+}
+
+.high-score {
+    color: #00f0ff;
+}
+
+.total-score {
+    color: #ff00aa;
+}
